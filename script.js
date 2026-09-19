@@ -89,10 +89,12 @@ async function uploadToImgBB(file) {
   if (!data.success) {
     throw new Error(data.error?.message || 'Upload gagal');
   }
+  
+  // ✅ PERBAIKAN: gunakan URL utama sebagai thumbnail
   return {
     url: data.data.url,
-    display_url: data.data.display_url,
-    thumb: data.data.thumb?.url || data.data.url,
+    display_url: data.data.display_url || data.data.url,
+    thumb: data.data.url,  // ← ini yang diubah (sebelumnya data.data.thumb?.url)
     delete_url: data.data.delete_url,
     size: data.data.size,
   };
@@ -157,6 +159,13 @@ async function uploadFile(file) {
   const item = document.createElement('div');
   item.className = 'queue-item';
   const previewUrl = URL.createObjectURL(file);
+   setTimeout(() => {
+  item.style.animation = 'slideIn 0.3s ease reverse';
+  setTimeout(() => {
+    item.remove();
+    URL.revokeObjectURL(previewUrl);  // ← tambahkan ini
+  }, 300);
+}, 2000);
   item.innerHTML = `
     <img class="queue-thumb" src="${previewUrl}" alt="" />
     <div class="queue-info">
@@ -264,11 +273,14 @@ function renderResults() {
     const card = document.createElement('div');
     card.className = 'result-card';
     card.innerHTML = `
-      <div class="result-preview">
-        <img src="${record.thumb}" alt="${escapeHtml(record.name)}" loading="lazy" />
-        <span class="result-badge">IMG</span>
-      </div>
-      <div class="result-body">
+       <div class="result-preview">
+       <img src="${record.thumb}" 
+         alt="${escapeHtml(record.name)}" 
+         loading="lazy"
+         onerror="this.onerror=null; this.src='${record.url}';" />
+       <span class="result-badge">IMG</span>
+     </div>
+  <div class="result-body">
         <div class="result-name" title="${escapeHtml(record.name)}">${escapeHtml(record.name)}</div>
         <div class="result-size">${formatSize(record.size)}</div>
         <div class="result-link">
